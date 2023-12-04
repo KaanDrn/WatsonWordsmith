@@ -1,11 +1,19 @@
 import os
 import pathlib
+import shutil
+
 from langchain.document_loaders import DirectoryLoader
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import Chroma
+
+from langchain.llms import OpenAI
+from langchain.retrievers.self_query.base import SelfQueryRetriever
+from langchain.chains.query_constructor.base import AttributeInfo
 
 
 class TextLoader():
-    def __init__(self, book_path:pathlib.Path):
+    def __init__(self, book_path: pathlib.Path):
         """
         Parameters
         ----------
@@ -13,7 +21,10 @@ class TextLoader():
             book as path with all chapters in it in the structure:
             "chapter_<chapter_number>__part_<part_number>"
         """
-        self.book_path = book_path
+        self.book_path = book_path.joinpath('content')
+        self.vector_store_dir = self.book_path
+
+        self.book_files = os.listdir(self.book_path)
 
         self.corpus = None
         self.splitter = None
@@ -22,16 +33,63 @@ class TextLoader():
 
     def load_from_txt_file(self):
         self.corpus = DirectoryLoader(self.book_path).load()
+        self.add_chapter_meta_data()
         return self.corpus
+
+    def add_chapter_meta_data(self):
+        # ToDo: use openlibrary.org to add relevant information about the
+        #  books to meta data
+        for icorpus in self.corpus:
+            file_name = icorpus.metadata.get('source')
+            file_name = file_name.split('\\')[-1].split('.')[0]
+
+            temp = file_name.split('__')
+            chapter = int(temp[0].split('_')[1])
+            subchapter = int(temp[1].split('_')[1].split('.')[0])
+
+            icorpus.metadata['chapter'] = chapter
+            icorpus.metadata['subchapter'] = subchapter
 
     def set_splitter(self):
         self.splitter = RecursiveCharacterTextSplitter(
                 chunk_size=500,
-                chunk_overlap=20,
+                chunk_overlap=50,
                 separators=["\n\n", "\n", " ", ""]
         )
         return
 
     def get_splits(self):
         self.splits = self.splitter.split_documents(self.corpus)
-        return
+        return self.splits
+
+
+class VectorDatabase:
+    def __init__(self,
+                 vector_db_path: pathlib.Path,
+                 embeddings=OpenAIEmbeddings()):
+        """
+        Parameters
+        ----------
+        vector_db_path:
+            path to the vector database, should be the same as the book path
+        """
+        self.vector_store_dir = str(vector_db_path.joinpath('database'))
+        self.embeddings = embeddings
+
+        self.splits = None
+        self.vector_db = None
+
+    def create_vectore_store(self, splits,
+                             delete_existing_db=True):
+        if delete_existing_db and os.path.isdir(self.vector_store_dir):
+            shutil.rmtree(self.vector_store_dir)
+
+        self.vector_db = Chroma.from_documents(
+                documents=splits,
+                embedding=self.embeddings,
+                persist_directory=self.vector_store_dir
+        )
+        self.vector_db.persist()
+
+    def get_relevant_passages(self, question):
+        return self.vector_db.similarity_search(question)
