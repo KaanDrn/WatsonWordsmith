@@ -20,11 +20,11 @@ if __name__ == "__main__":
     splits = loader_obj.get_splits()
 
     vector_db_obj = VectorDatabase(book_path)
-    vector_db_obj.create_vectore_store(splits)
 
-    question = "What animal is Napoleon?"
-    question = "What is the name of the farm, the animals live in?"
+    # question = "What animal is Napoleon?"
+    question = "What is the name of the farm, the animals live in?" \
+               "Only use text from chapter 3 or later"
 
-    vector_db_obj.get_relevant_passages(question)
+    docs = vector_db_obj.get_relevant_passages(question)
 
     print('done')
