@@ -5,14 +5,18 @@ import shutil
 from langchain.chains.query_constructor.base import AttributeInfo
 from langchain.document_loaders import DirectoryLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.llms import HuggingFacePipeline
+from langchain.llms import OpenAI
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import LLMChainExtractor
+from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
-from langchain.llms import OpenAI
-from langchain.retrievers.self_query.base import SelfQueryRetriever
-from langchain.chains.query_constructor.base import AttributeInfo
+from transformers import AutoTokenizer, pipeline, BertForQuestionAnswering, \
+    AutoModelForQuestionAnswering, AutoModelForSeq2SeqLM
 
 
-class TextLoader():
+class TextLoader:
     def __init__(self, book_path: pathlib.Path):
         """
         Parameters
@@ -76,15 +80,13 @@ class VectorDatabase:
         self.vector_store_dir = str(vector_db_path.joinpath('database'))
         self.embeddings = embeddings
 
-        self.splits = None
         self.vector_db = self.set_vector_store()
 
-        self.llm = self.set_llm()
-        self.query_metadata = self.set_meta_data_fields()
-        self.retriever = self.set_retriever()
+        self.set_llm('open-ai')
+        self.set_meta_data_fields()
+        self.set_retriever()
 
-    def create_vector_store(self, splits,
-                            delete_existing_db=True):
+    def create_vector_store(self, splits, delete_existing_db=True):
         if delete_existing_db and os.path.isdir(self.vector_store_dir):
             shutil.rmtree(self.vector_store_dir)
 
@@ -102,15 +104,18 @@ class VectorDatabase:
         )
         return vector_db
 
-    def get_relevant_passages(self, question):
-        return self.retriever.get_relevant_documents(question)
+    def set_llm(self, llm_type='open-ai'):
+        if llm_type == 'open-ai':
+            self.llm = OpenAI(temperature=0.1)
+        elif llm_type == 'open-source':
+            raise NotImplementedError('Open source alternative is not '
+                                      'implemented yet.')
+        else:
+            raise ValueError(f'llm_type {llm_type} is unknown.\n'
+                             f'Valid arguments are: "open_ai" or '
+                             f'"open-source"')
 
-    @staticmethod
-    def set_llm():
-        return OpenAI(temperature=0)
-
-    @staticmethod
-    def set_meta_data_fields():
+    def set_meta_data_fields(self):
         query_metadata = [
             AttributeInfo(
                     name="source",
@@ -129,15 +134,33 @@ class VectorDatabase:
                     type="integer",
             ),
         ]
-        return query_metadata
+        self.query_metadata = query_metadata
 
-    def set_retriever(self):
-        document_content_description = "Book"
-        retriever = SelfQueryRetriever.from_llm(
-                self.llm,
-                self.vector_db,
-                document_content_description,
-                self.query_metadata,
-                verbose=True
-        )
-        return retriever
+    def set_retriever(self, retriever_type='self'):
+        if retriever_type == 'self':
+            document_content_description = "Book"
+            retriever = SelfQueryRetriever.from_llm(
+                    self.llm,
+                    self.vector_db,
+                    document_content_description,
+                    self.query_metadata,
+                    verbose=True
+            )
+        elif retriever_type == 'compress':
+            compressor = LLMChainExtractor.from_llm(self.llm)
+            retriever = ContextualCompressionRetriever(
+                    base_compressor=compressor,
+                    base_retriever=self.vector_db.as_retriever()
+            )
+        self.retriever = retriever
+
+
+class AnswerMe:
+    def __init__(self, llm, vector_db, retriever):
+        self.llm = llm
+        self.vector_db = vector_db
+        self.retriever = retriever
+
+    def get_relevant_documents(self, question):
+        return self.retriever.get_relevant_documents(query=question)
+
