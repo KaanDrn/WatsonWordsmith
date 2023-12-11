@@ -2,18 +2,17 @@ import os
 import pathlib
 import shutil
 
+from langchain.chains import RetrievalQA
 from langchain.chains.query_constructor.base import AttributeInfo
 from langchain.document_loaders import DirectoryLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms import HuggingFacePipeline
 from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
-from transformers import AutoTokenizer, pipeline, BertForQuestionAnswering, \
-    AutoModelForQuestionAnswering, AutoModelForSeq2SeqLM
 
 
 class TextLoader:
@@ -106,7 +105,7 @@ class VectorDatabase:
 
     def set_llm(self, llm_type='open-ai'):
         if llm_type == 'open-ai':
-            self.llm = OpenAI(temperature=0.1)
+            self.llm = OpenAI(temperature=0)
         elif llm_type == 'open-source':
             raise NotImplementedError('Open source alternative is not '
                                       'implemented yet.')
@@ -161,6 +160,36 @@ class AnswerMe:
         self.vector_db = vector_db
         self.retriever = retriever
 
+        self.set_template()
+        self.set_answerer()
+
     def get_relevant_documents(self, question):
         return self.retriever.get_relevant_documents(query=question)
 
+    def set_answerer(self):
+        prompt_template = PromptTemplate.from_template(self.template)
+        self.qa_chain = RetrievalQA.from_chain_type(
+                self.llm,
+                retriever=self.vector_db.as_retriever(search_type="mmr"),
+                chain_type_kwargs={'prompt': prompt_template},
+                chain_type='stuff'
+        )
+
+    def answer(self, question):
+        answer = self.qa_chain({'query': question})
+        return answer['result']
+
+    def set_template(self):
+        self.template = \
+            """
+            If you don't know the answer, just say that you could not find
+            anything related to the question in the book,
+            don't try to make up an answer. Always start your answer with
+            "Let me look that up real quick...". In addition to your answer 
+            alway mention in which chapter or subchapter the answer can be 
+            looked up, if the information is not from a sepcific chapter 
+            do not mention any chapter. Use information from the documents 
+            with the lowest chapter possible.
+            {context}
+            Question: {question}
+            Helpful Answer:"""
