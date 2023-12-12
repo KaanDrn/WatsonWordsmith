@@ -2,11 +2,12 @@ import os
 import pathlib
 import shutil
 
-from langchain.chains import RetrievalQA
+from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain.chains.query_constructor.base import AttributeInfo
 from langchain.document_loaders import DirectoryLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import OpenAI
+from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
@@ -55,8 +56,8 @@ class TextLoader:
 
     def set_splitter(self):
         self.splitter = RecursiveCharacterTextSplitter(
-                chunk_size=500,
-                chunk_overlap=50,
+                chunk_size=1500,
+                chunk_overlap=200,
                 separators=["\n\n", "\n", " ", ""]
         )
         return
@@ -105,7 +106,7 @@ class VectorDatabase:
 
     def set_llm(self, llm_type='open-ai'):
         if llm_type == 'open-ai':
-            self.llm = OpenAI(temperature=0)
+            self.llm = OpenAI(temperature=0.1)
         elif llm_type == 'open-source':
             raise NotImplementedError('Open source alternative is not '
                                       'implemented yet.')
@@ -161,35 +162,55 @@ class AnswerMe:
         self.retriever = retriever
 
         self.set_template()
-        self.set_answerer()
+        self.set_memory()
+        self.set_conversation_answerer()
+        
+        # self.set_answerer()
+        
 
     def get_relevant_documents(self, question):
         return self.retriever.get_relevant_documents(query=question)
 
     def set_answerer(self):
+        """
+        Does not have context capacity, therefore will not be used now
+        Returns
+        -------
+
+        """
         prompt_template = PromptTemplate.from_template(self.template)
-        self.qa_chain = RetrievalQA.from_chain_type(
+        self.answerer = RetrievalQA.from_chain_type(
                 self.llm,
                 retriever=self.vector_db.as_retriever(search_type="mmr"),
+                # return_source_documents=True,
                 chain_type_kwargs={'prompt': prompt_template},
                 chain_type='stuff'
         )
 
     def answer(self, question):
-        answer = self.qa_chain({'query': question})
-        return answer['result']
+        answer = self.answerer({'question': question})
+        return answer['answer']
 
     def set_template(self):
         self.template = \
             """
-            If you don't know the answer, just say that you could not find
-            anything related to the question in the book,
-            don't try to make up an answer. Always start your answer with
-            "Let me look that up real quick...". In addition to your answer 
-            alway mention in which chapter or subchapter the answer can be 
-            looked up, if the information is not from a sepcific chapter 
-            do not mention any chapter. Use information from the documents 
-            with the lowest chapter possible.
+            Only use the context provided to answer the question provided,
+            don't try to make up an answer. Mention in which chapter or 
+            subchapter the answer can be looked up. Use information from the 
+            documents with the lowest chapter possible.
             {context}
             Question: {question}
-            Helpful Answer:"""
+            Answer:"""
+
+    def set_memory(self):
+        self.memory = ConversationBufferMemory(
+                memory_key="chat_history",
+                return_messages=True
+        )
+
+    def set_conversation_answerer(self):
+        self.answerer = ConversationalRetrievalChain.from_llm(
+                self.llm,
+                retriever=self.retriever,
+                memory=self.memory
+        )

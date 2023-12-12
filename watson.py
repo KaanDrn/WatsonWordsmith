@@ -22,7 +22,8 @@ if __name__ == "__main__":
     vector_db_obj = VectorDatabase(book_path)
 
     answer_obj = dh.AnswerMe(ChatOpenAI(model_name="gpt-3.5-turbo",
-                                        temperature=0.3),
+                                        temperature=0.1,
+                                        max_tokens=500),
                              vector_db_obj.vector_db,
                              vector_db_obj.retriever)
 
@@ -30,9 +31,10 @@ if __name__ == "__main__":
     question = "What animal is Napoleon?"
     question = "What is the name of the farm, the animals live in? Only Use " \
                "data from the first chapter"
-    question = "What animal is Moses?"
-    question = "What person does Napoleon represent in real life?"
-    question = "What does Boxer stand for in the book?"
+    question = "Answer like Donald Trump. What animal is Moses?"
+    question = "What does Napoleon represent in real life?"
+    question = "What does Boxer stand for in the " \
+               "book?"
 
     answer = answer_obj.answer(question)
 
