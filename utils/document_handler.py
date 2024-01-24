@@ -58,7 +58,7 @@ class TextLoader:
         self.splitter = RecursiveCharacterTextSplitter(
                 chunk_size=1500,
                 chunk_overlap=200,
-                separators=["\n\n", "\n", " ", ""]
+                separators=["\n\n", "\n", ".", " ", ""]
         )
         return
 
@@ -102,6 +102,7 @@ class VectorDatabase:
                 persist_directory=self.vector_store_dir,
                 embedding_function=self.embeddings
         )
+        # ToDo: add exception, if DB does not exist
         return vector_db
 
     def set_llm(self, llm_type='open-ai'):
@@ -166,7 +167,6 @@ class AnswerMe:
         self.set_conversation_answerer()
         
         # self.set_answerer()
-        
 
     def get_relevant_documents(self, question):
         return self.retriever.get_relevant_documents(query=question)
@@ -194,10 +194,10 @@ class AnswerMe:
     def set_template(self):
         self.template = \
             """
-            Only use the context provided to answer the question provided,
-            don't try to make up an answer. Mention in which chapter or 
-            subchapter the answer can be looked up. Use information from the 
-            documents with the lowest chapter possible.
+            Answer like a literature expert. Only use the context provided to 
+            answer the given question, don't try to make up an answer. 
+            Mention in which chapter or 
+            subchapter the answer can be looked up.
             {context}
             Question: {question}
             Answer:"""
@@ -209,8 +209,10 @@ class AnswerMe:
         )
 
     def set_conversation_answerer(self):
+        prompt_template = PromptTemplate.from_template(self.template)
         self.answerer = ConversationalRetrievalChain.from_llm(
                 self.llm,
                 retriever=self.retriever,
-                memory=self.memory
+                memory=self.memory,
+                combine_docs_chain_kwargs={'prompt': prompt_template}
         )
