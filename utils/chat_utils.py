@@ -5,6 +5,7 @@ from langchain.prompts import PromptTemplate
 
 class AnswerMe:
     def __init__(self, llm, vector_db, retriever):
+        self.memory = None
         self.template = None
         self.answerer = None
         self.llm = llm
@@ -43,11 +44,10 @@ class AnswerMe:
     def set_template(self):
         self.template = \
             """
-            Answer like a literature expert, who someone asked for their 
-            opinion on a certain part of a book and give a medium long 
-            answer to each question. 
-            Mention in which chapter or 
-            subchapter the answer can be looked up.
+            Answer like a literature expert and give a medium long 
+            answer to each question. Answer in full sentences and
+            Always add the chapter or subchapter number the answer can be 
+            looked up.
             
             {context}
             Question: {question}

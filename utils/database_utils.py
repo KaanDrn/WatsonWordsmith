@@ -3,11 +3,11 @@ import pathlib
 import shutil
 
 from langchain.chains.query_constructor.schema import AttributeInfo
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import SelfQueryRetriever, \
     ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 
 
 class VectorDatabase:

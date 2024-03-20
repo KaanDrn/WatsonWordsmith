@@ -3,7 +3,8 @@ import pathlib
 
 import openai
 from dotenv import load_dotenv, find_dotenv
-from langchain.llms import HuggingFaceHub
+from langchain import LLMChain
+from langchain_community.llms import HuggingFaceHub
 from langchain.prompts import PromptTemplate
 
 load_dotenv(find_dotenv())
@@ -12,7 +13,8 @@ openai.api_key = os.environ['OPENAI_API_KEY']
 from utils import document_handler as dh
 from utils.database_utils import VectorDatabase, Retriever
 from utils import chat_utils
-from transformers import pipeline
+from transformers import pipeline, AutoTokenizer
+
 
 def get_all_documents_for_book(book_path):
     """
@@ -55,28 +57,6 @@ if __name__ == "__main__":
             },
     )
 
-    # model = AutoModelForSeq2SeqLM.from_pretrained(
-    #     "utils/model/fastchat-t5-3b-v1",
-    #     local_files_only=True,
-    #     # load_in_8bit=True,
-    #     device_map='auto',
-    #     low_cpu_mem_usage=True, offload_folder="utils/model/offload")
-    # pipe = pipeline("text2text-generation",
-    #                 model=model,
-    #                 tokenizer=tokenizer,
-    #                 max_length=512,
-    #                 temperature=0,
-    #                 top_p=0.95,
-    #                 repetition_penalty=1.15
-    #                 )
-    #
-    # local_llm = HuggingFacePipeline(pipeline=pipe)
-    #
-    # pipe = pipeline("text2text-generation",
-    #                 model=model,
-    #                 tokenizer=tokenizer)
-
-    # set retriever
     retriever_obj = Retriever(llm=local_llm,
                               vector_db=vector_db_obj.vector_db)
     retriever_obj.set_retriever(retriever_type='vector_db',
@@ -88,12 +68,11 @@ if __name__ == "__main__":
 
     # sample questions, that can be asked
     # question = "What animal is Napoleon?"
-    # question = "What is the name of the farm, the animals live in? Only Use " \
-    #            "data from the first chapter"
     question = "What animal is Moses?"
-    # question = "What does Napoleon represent in real life?"
-    # question = "What does Boxer stand for in the book?"
+    # question = "What is the name of the farm, the animals live in?"
+    # question = "what was the name of the farm before it became animal farm?"
+    # question = "Why does snowball no longer live on the farm?"
 
     answer = answer_obj.answer(question)
 
-    print('done')
+    print(answer)
