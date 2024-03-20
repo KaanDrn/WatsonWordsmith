@@ -3,11 +3,13 @@ import pathlib
 import shutil
 
 from langchain.chains.query_constructor.schema import AttributeInfo
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import SelfQueryRetriever, \
     ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
+
+from utils import document_handler as dh
 
 
 class VectorDatabase:
@@ -97,3 +99,21 @@ class Retriever:
                     search_kwargs={"k": 6,
                                    "fetch_k": 18})
         self.retriever = retriever
+
+
+def get_all_documents_for_book(book_path):
+    """
+    gets all documents for book and returns the already splitted data
+    Parameters
+    ----------
+    book_path
+
+    Returns
+    -------
+
+    """
+    loader_obj = dh.TextLoader(book_path)
+    corpus = loader_obj.load_from_txt_file()
+    loader_obj.set_splitter()
+    splits = loader_obj.get_splits()
+    return splits
