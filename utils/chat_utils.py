@@ -43,11 +43,13 @@ class AnswerMe:
     def set_template(self):
         self.template = \
             """
-            Answer like a literature expert, who someone asked for their 
-            opinion on a certain part of a book and give a medium long 
-            answer to each question. 
-            Mention in which chapter or 
-            subchapter the answer can be looked up.
+            Use the following context and give an answer to the question 
+            like a literature expert and give a medium long answer to each 
+            question. 
+            Mention in which chapter or subchapter the answer can be looked up.
+            If you dont find the information needed to answer the question, 
+            point out that you could not find documents to answer the 
+            question, do not make up answers.
             
             {context}
             Question: {question}
@@ -65,5 +67,6 @@ class AnswerMe:
                 llm=self.llm,
                 retriever=self.retriever,
                 memory=self.memory,
+                chain_type='stuff',
                 combine_docs_chain_kwargs={'prompt': prompt_template}
         )

@@ -22,6 +22,7 @@ class VectorDatabase:
         book_path:
             path to the vector database, should be the same as the book path
         """
+        self.book_path = book_path
         self.vector_store_dir = str(book_path.joinpath('database'))
         self.embeddings = embeddings
 
@@ -45,6 +46,23 @@ class VectorDatabase:
         )
         # ToDo: add exception, if DB does not exist
         return
+
+    def get_all_documents_for_book(self):
+        """
+        gets all documents for book and returns the already splitted data
+        Parameters
+        ----------
+        book_path
+
+        Returns
+        -------
+
+        """
+        loader_obj = dh.TextLoader(self.book_path)
+        loader_obj.load_from_txt_file()
+        loader_obj.set_splitter()
+        splits = loader_obj.get_splits()
+        return splits
 
     def set_llm(self, llm):
         self.llm = llm
@@ -101,19 +119,4 @@ class Retriever:
         self.retriever = retriever
 
 
-def get_all_documents_for_book(book_path):
-    """
-    gets all documents for book and returns the already splitted data
-    Parameters
-    ----------
-    book_path
 
-    Returns
-    -------
-
-    """
-    loader_obj = dh.TextLoader(book_path)
-    corpus = loader_obj.load_from_txt_file()
-    loader_obj.set_splitter()
-    splits = loader_obj.get_splits()
-    return splits
