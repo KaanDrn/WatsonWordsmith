@@ -114,7 +114,7 @@ class Retriever:
         elif retriever_type == 'vector_db':
             retriever = self.vector_db.as_retriever(
                     search_type='mmr',
-                    search_kwargs={"k": 6,
+                    search_kwargs={"k": 3,
                                    "fetch_k": 18})
         self.retriever = retriever
 
