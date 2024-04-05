@@ -3,7 +3,6 @@ import pathlib
 from datetime import datetime
 
 import streamlit as st
-from dotenv import load_dotenv, find_dotenv
 from langchain_community.llms.huggingface_hub import HuggingFaceHub
 
 from utils import chat_utils
@@ -20,7 +19,8 @@ NOW = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
 
 
 def init_states():
-    load_dotenv(find_dotenv())
+    os.environ['HUGGINGFACEHUB_API_TOKEN'] = \
+        st.secrets['HUGGINGFACEHUB_API_TOKEN']
     st.session_state.initialized = True
     st.session_state.create_button_visible = True
     st.session_state.add_new_book_visibile = False
