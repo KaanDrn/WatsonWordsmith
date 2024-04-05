@@ -1,5 +1,6 @@
 __import__('pysqlite3')
 import sys
+
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import os
@@ -40,7 +41,7 @@ def init_states():
     st.session_state.local_llm = HuggingFaceHub(
             repo_id="google/flan-t5-xxl",
             model_kwargs={
-                #"max_new_tokens": 250,
+                # "max_new_tokens": 250,
                 "temperature": 0.01
             },
     )
@@ -115,7 +116,6 @@ def select_chat(**kwargs):
 
 
 def answer_me(prompt):
-    st.rerun()
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             answer = st.session_state.answer_obj.answer(prompt)
@@ -127,6 +127,16 @@ def answer_me(prompt):
              }
     )
     return
+
+
+def get_book_name(current_chat):
+    return current_chat.split(' - ')[0]
+
+
+def write_chats():
+    for imessage in st.session_state.all_chats[st.session_state.current_chat]:
+        with st.chat_message(imessage.get('role')):
+            st.write(imessage.get('message'))
 
 
 # building the website from here on
@@ -170,23 +180,19 @@ with st.session_state.sidebar:
                         kwargs={'selected_chat': ichat,
                                 'selected_chat_number': inum_chat})
 
-
-def get_book_name(current_chat):
-    return current_chat.split(' - ')[0]
-
-
 # manages the chat window
 if st.session_state.current_chat:
     prompt = st.chat_input('Talk to me...')
 
-    for imessage in st.session_state.all_chats[st.session_state.current_chat]:
-        with st.chat_message(imessage.get('role')):
-            st.write(imessage.get('message'))
+    write_chats()
 
     if prompt:
         st.session_state.all_chats[st.session_state.current_chat].append(
                 {'role': 'user',
                  'message': prompt}
         )
+
+        with st.chat_message('user'):
+            st.write(prompt)
         answer = answer_me(prompt)
         st.rerun()
