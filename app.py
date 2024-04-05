@@ -115,6 +115,7 @@ def select_chat(**kwargs):
 
 
 def answer_me(prompt):
+    st.rerun()
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             answer = st.session_state.answer_obj.answer(prompt)
@@ -155,7 +156,7 @@ with st.session_state.sidebar:
             st.session_state.sidebar.columns([0.7, 0.15, 0.15])
 
         for inum_chat, ichat in enumerate(st.session_state.all_chats):
-            with st.session_state.container(border=True):
+            with st.session_state.container():
                 st.session_state.col_chat_name.text(ichat)
                 st.session_state.col_delete_chat.button(
                         ":wastebasket:",
