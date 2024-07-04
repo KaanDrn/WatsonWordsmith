@@ -33,7 +33,8 @@ def init_states():
     st.session_state.all_chats = {}
 
     # create llm
-    st.session_state.local_llm = chat_utils.create_local_llm()
+    st.session_state.local_llm = chat_utils.create_local_llm(
+            model_name="llama3:8b")
 
 
 if not st.session_state.initialized:

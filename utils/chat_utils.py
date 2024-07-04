@@ -52,9 +52,9 @@ class AnswerMe:
             Answer the following question with the context, do not make up 
             content, that is not mentioned in the context:
             Question: {question}
-            You answer should be instructive and should sound like a 
+            You answer should be simple and should sound like a 
             professional literature expert. Help the user to improve his 
-            question if you can not find the answer.
+            question if you can not find the answer in the context.
             Helpful Answer:"""
 
     def set_memory(self):
