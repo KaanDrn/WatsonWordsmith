@@ -1,6 +1,9 @@
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
+from langchain.chains.conversational_retrieval.prompts import \
+    CONDENSE_QUESTION_PROMPT
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
+from langchain_community.llms.ollama import Ollama
 
 
 class AnswerMe:
@@ -38,22 +41,21 @@ class AnswerMe:
 
     def answer(self, question):
         answer = self.answerer({'question': question})
-        return answer['answer']
+        return answer['answer'].split("Answer:")[-1]
 
     def set_template(self):
         self.template = \
             """
-            Use the following context and give an answer to the question 
-            like a literature expert and give a medium long answer to each 
-            question. 
-            Mention in which chapter or subchapter the answer can be looked up.
-            If you dont find the information needed to answer the question, 
-            point out that you could not find documents to answer the 
-            question, do not make up answers.
-            
-            {context}
+            Your name is watson and you are a friedly but professional 
+            chatbot, that answers questions from a book, with the following 
+            context: {context}
+            Answer the following question with the context, do not make up 
+            content, that is not mentioned in the context:
             Question: {question}
-            Answer:"""
+            You answer should be simple and should sound like a 
+            professional literature expert. Help the user to improve his 
+            question if you can not find the answer in the context.
+            Helpful Answer:"""
 
     def set_memory(self):
         self.memory = ConversationBufferMemory(
@@ -66,7 +68,13 @@ class AnswerMe:
         self.answerer = ConversationalRetrievalChain.from_llm(
                 llm=self.llm,
                 retriever=self.retriever,
+                #return_source_documents=True,
                 memory=self.memory,
                 chain_type='stuff',
-                combine_docs_chain_kwargs={'prompt': prompt_template}
+                combine_docs_chain_kwargs={'prompt': prompt_template},
+                verbose=False,
         )
+
+def create_local_llm(model_name='llama3:8b'):
+    return Ollama(model=model_name,
+                  temperature=0.1)

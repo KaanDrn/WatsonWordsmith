@@ -2,7 +2,8 @@ import os
 import pathlib
 
 from dotenv import load_dotenv, find_dotenv
-from langchain_community.llms import HuggingFaceHub
+from langchain_community.llms import Ollama
+from langchain_community.llms.huggingface_hub import HuggingFaceHub
 
 load_dotenv(find_dotenv())
 
@@ -11,7 +12,7 @@ from utils import chat_utils
 
 if __name__ == "__main__":
     # define which book you want to chat with
-    book_path = pathlib.Path('data/books/1984')
+    book_path = pathlib.Path('data/books/animal_farm')
 
     # create vector_db object and determine if a vector db already exists or
     # you want to create a new one
@@ -24,17 +25,11 @@ if __name__ == "__main__":
 
     vector_db_obj.set_meta_data_fields()
     # create llm
-    local_llm = HuggingFaceHub(
-            repo_id="google/flan-t5-xxl",
-            model_kwargs={
-                # "max_new_tokens": 200,
-                "temperature": 0.01
-            },
-    )
+    local_llm = Ollama(model='llama3:8b', temperature=0.1)
 
     retriever_obj = Retriever(llm=local_llm,
                               vector_db=vector_db_obj.vector_db)
-    retriever_obj.set_retriever(retriever_type='vector_db',
+    retriever_obj.set_retriever(retriever_type='self',
                                 query_metadata=vector_db_obj.query_metadata)
 
     answer_obj = chat_utils.AnswerMe(local_llm,
@@ -47,15 +42,10 @@ if __name__ == "__main__":
     # question = "What is the name of the farm, the animals live in?"
     # question = "What was the name of the farm before that?"
     # question = "Why did Snowball leave the farm?"
-
-    question = "Who is the neighbour of Winston?"
-    question = "Who is Julia?"
-    question = "What is her relationship with Winston?"
-    question = "How did they get in touch?"
-    question = "What did the letter read?"
-
-    question = "Where does Winston work?"
-    question = "How many Ministeries do exist and what are their names?"
+    question = "What is the name of the horse?"
+    # question = "Are there more horses?"
+    # question = "What are their names?"
+    # question = "Is there a third horse?"
 
     answer = answer_obj.answer(question)
 
