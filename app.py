@@ -33,13 +33,7 @@ def init_states():
     st.session_state.all_chats = {}
 
     # create llm
-    st.session_state.local_llm = HuggingFaceHub(
-            repo_id="google/flan-t5-xxl",
-            model_kwargs={
-                #"max_new_tokens": 250,
-                "temperature": 0.01
-            },
-    )
+    st.session_state.local_llm = chat_utils.create_local_llm()
 
 
 if not st.session_state.initialized:
@@ -85,7 +79,7 @@ def create_new_chat():
 
     retriever_obj = Retriever(llm=st.session_state.local_llm,
                               vector_db=vector_db_obj.vector_db)
-    retriever_obj.set_retriever(retriever_type='vector_db',
+    retriever_obj.set_retriever(retriever_type='self',
                                 query_metadata=vector_db_obj.query_metadata)
 
     st.session_state.answer_obj = chat_utils.AnswerMe(
