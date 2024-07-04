@@ -45,7 +45,7 @@ class TextLoader:
 
     def set_splitter(self):
         self.splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1500,
+                chunk_size=1000,
                 chunk_overlap=200,
                 separators=["\n\n", "\n", ".", " ", ""]
         )
