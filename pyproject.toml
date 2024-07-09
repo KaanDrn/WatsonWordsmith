@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "utils"
+version = "0.1.0"
+description = "Watsonwordsmith is a chatbot system that discusses classical literature with users, offering information and insights about famous books. It's a tool for anyone looking to learn more about classic novels and engage in conversations about them."
+authors = ["Kaan Duran"]
+license = "CC0 1.0 Universal"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.10.13"
+langchain-community = "0.0.27"
+langchain = "0.1.11"
+python-dotenv = "1.0.0"
+streamlit = "*"
+sentence-transformers = "2.2.2"
+chromadb = "0.4.18"
+unstructured = "0.11.0"
+lark = "1.1.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
